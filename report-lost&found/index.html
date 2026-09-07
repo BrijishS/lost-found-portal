@@ -6,96 +6,216 @@
     <title>Campus Lost & Found Portal</title>
 
     <link rel="stylesheet" href="css/kern.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/app.css">
+
+    <style>
+        /* Stack Quick Action buttons vertically, one below another */
+        .nav-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .nav-item {
+            width: 100%;
+        }
+
+        .nav-item button {
+            width: 100%;
+            position: static !important;
+        }
+
+        .nav-item.urgent button {
+            background: var(--ink);
+            border-color: var(--ink);
+        }
+
+        .nav-item.urgent button:hover {
+            background: var(--red-deep);
+            border-color: var(--red-deep);
+        }
+
+        .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.2rem;
+        }
+
+        .section-head h2 {
+            margin: 0;
+        }
+
+        .section-head a {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--red-deep);
+        }
+
+        #notif-count-badge {
+            display: none;
+            margin-left: 0.4rem;
+            background: var(--red);
+            color: var(--paper);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+        }
+
+        .logged-out-notice {
+            text-align: center;
+            color: var(--gray);
+            font-size: 0.9rem;
+            padding: 1.5rem;
+            border: 1.5px dashed var(--line);
+            border-radius: 10px;
+        }
+    </style>
 </head>
 
 <body>
 
-    
+    <!-- Header -->
     <header>
+        <div class="auth-area" id="auth-area">
+            <!-- Filled in by refreshAuthUI() in auth.js -->
+        </div>
+
         <span class="eyebrow">Campus Services</span>
         <h1>Lost &amp; Found Portal</h1>
         <p>Helping students recover their lost belongings quickly and safely.</p>
     </header>
 
-   
+    <!-- Main Content -->
     <main>
 
-       
+        <!-- Navigation -->
         <section class="navigation" aria-label="Quick actions">
-            <h2>Quick Actions</h2>
+            <h2 id="welcome-heading">Hi, User 👋</h2>
 
             <div class="nav-grid">
                 <div class="nav-item">
-                    <a href="report-lost.html">
-                        <button type="button">Report Lost Item</button>
-                    </a>
-                    <p class="nav-desc">Lost something on campus? Submit the details of your missing item, including its name, description, location, and the date it was lost. This helps other students and staff identify and return your belongings if they are found.</p>
+                    <button type="button" onclick="requireLogin('report-lost.html')">Report Lost Item</button>
                 </div>
 
                 <div class="nav-item">
-                    <a href="report-found.html">
-                        <button type="button">Report Found Item</button>
-                    </a>
-                    <p class="nav-desc">Found an item on campus? Share its details and the location where you discovered it. Your report helps the rightful owner identify and reclaim their lost property quickly and securely.</p>
+                    <button type="button" onclick="requireLogin('report-found.html')">Report Found Item</button>
                 </div>
 
                 <div class="nav-item">
-                    <a href="search.html">
-                        <button type="button">Search Items</button>
-                    </a>
-                    <p class="nav-desc">Browse or search through the list of reported lost and found items using keywords or filters. Check whether your lost item has already been reported or find the owner of an item you've found.</p>
+                    <button type="button" onclick="requireLogin('search.html')">Search Items</button>
+                </div>
+
+                <div class="nav-item">
+                    <button type="button" onclick="requireLogin('notif.html')">
+                        Notifications <span id="notif-count-badge">0</span>
+                    </button>
+                </div>
+
+                <div class="nav-item">
+                    <button type="button" onclick="requireLogin('myreports.html')">My Reports</button>
+                </div>
+
+                <div class="nav-item urgent">
+                    <button type="button" onclick="requireLogin('report-lost.html?urgent=1')">🚨 Report Urgent Item (ID / Hall Ticket / Certificate)</button>
                 </div>
             </div>
         </section>
 
-        <section class="latest-reports" aria-label="Latest reports">
-            <h2>Latest Reports</h2>
+        <!-- Content only shown once logged in -->
+        <div id="logged-in-content">
 
-            <div class="reports-grid">
-                <div class="report-card">
-                    <span class="status lost">Lost</span>
-                    <h3>👜 Black Wallet</h3>
-                    <p><strong>Location:</strong> Central Library</p>
-                    <p><strong>Date:</strong> 15 July 2026</p>
-                    <button type="button">View Details</button>
+            <!-- Stats -->
+            <section class="stats-section" aria-label="Dashboard stats">
+                <div class="section-head"><h2>Your Stats</h2></div>
+                <div class="stats-grid" id="stats-grid"></div>
+            </section>
+
+            <!-- Student info -->
+            <section class="profile-section" aria-label="Student information">
+                <div class="section-head"><h2>Student Information</h2></div>
+                <form class="profile-card" id="profile-form">
+                    <div class="field">
+                        <label for="profile-department">Department</label>
+                        <select id="profile-department">
+                            <option value="">Select department</option>
+                            <option>Computer Science</option>
+                            <option>Mechanical</option>
+                            <option>Electrical</option>
+                            <option>Civil</option>
+                            <option>Commerce</option>
+                            <option>Arts &amp; Science</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="profile-year">Year &amp; Section</label>
+                        <input type="text" id="profile-year" placeholder="e.g. 3rd Year - B">
+                    </div>
+                    <div class="field">
+                        <label for="profile-regno">Register Number</label>
+                        <input type="text" id="profile-regno" placeholder="e.g. 21CS045">
+                    </div>
+                    <div class="profile-save-row">
+                        <button type="submit" class="btn-small">Save Details</button>
+                        <span class="save-hint" id="profile-save-hint">✓ Saved — this will auto-fill your reports</span>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Recent activity -->
+            <section class="activity-section" aria-label="Recent activity">
+                <div class="section-head">
+                    <h2>Recent Activity</h2>
+                    <a href="myreports.html">View all →</a>
                 </div>
+                <div id="recent-activity"></div>
+            </section>
 
-                <div class="report-card">
-                    <span class="status found">Found</span>
-                    <h3>🎒 Blue Backpack</h3>
-                    <p><strong>Location:</strong> Cafeteria</p>
-                    <p><strong>Date:</strong> 14 July 2026</p>
-                    <button type="button">View Details</button>
+            <!-- Notifications preview -->
+            <section class="notif-section" aria-label="Notifications">
+                <div class="section-head">
+                    <h2>Notifications</h2>
+                    <a href="notif.html">View all →</a>
                 </div>
+                <div id="notif-preview"></div>
+            </section>
 
-                <div class="report-card">
-                    <span class="status lost">Lost</span>
-                    <h3>📱 Samsung Phone</h3>
-                    <p><strong>Location:</strong> Engineering Block</p>
-                    <p><strong>Date:</strong> 13 July 2026</p>
-                    <button type="button">View Details</button>
-                </div>
-            </div>
-        </section>
+        </div>
 
-       
-        <section class="about">
-            <h2>About This Portal</h2>
-
-            <p>
-                This portal helps students report lost items,
-                report found items, search for belongings,
-                and reconnect lost property with its owner.
-            </p>
-
-        </section>
+        <div id="logged-out-notice" class="logged-out-notice" hidden>
+            Log in to see your stats, activity and notifications.
+        </div>
 
     </main>
 
-    
+    <!-- Footer -->
     <footer>
         <p>&copy; 2026 Campus Lost &amp; Found Portal. All Rights Reserved.</p>
     </footer>
 
+    <script src="js/auth.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        initDashboard();
+
+        document.getElementById("logged-in-content").hidden = !isLoggedIn();
+        document.getElementById("logged-out-notice").hidden = isLoggedIn();
+    </script>
+
 </body>
 </html>
+
+       
+       
+                   
+               
+            
+
+    
+   
